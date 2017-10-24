@@ -26,7 +26,8 @@
 var body_size = 4,
     head_radius = 2,
     tail_size = 3,
-    leg_segment_size = 1;
+    leg_segment_size = 1,
+    antennae_size = 0.25;
  
 class Butterfly_Scene extends Scene_Component  // Code your butterfly assignment below.  It is an example of drawing a hierarchical object using a "model_transform" matrix.
 { constructor( context )
@@ -63,7 +64,7 @@ class Butterfly_Scene extends Scene_Component  // Code your butterfly assignment
     //now we rotate!
     wing_transform = wing_transform.times(Mat4.rotation(Math.PI/4,  Vec.of(0,1,0)));
     // //add the flapping animation
-    wing_transform = wing_transform.times(Mat4.rotation(Math.sin(this.t)*0.5,  Vec.of(1,0,1)));
+    wing_transform = wing_transform.times(Mat4.rotation(Math.sin(2*this.t)*0.5,  Vec.of(1,0,1)));
     //translate to find the corner hinge
     wing_transform = wing_transform.times(Mat4.translation(Vec.of(0, 0.1, 0)));
     //let's figure out wing size by doing some trig
@@ -109,6 +110,25 @@ class Butterfly_Scene extends Scene_Component  // Code your butterfly assignment
     second_segment = second_segment.times(Mat4.translation(Vec.of(0, -leg_segment_size, 0.2))); //translate back
     this.shapes.box.draw(graphics_state, second_segment.times(Mat4.scale(Vec.of(0.2, leg_segment_size, 0.2))), this.blue);
   }
+
+  draw_antennae( graphics_state, model_transform )
+  {
+    let current_segment = model_transform;
+    //the first segment shouldn't rotate/move
+    this.shapes.box.draw(graphics_state, current_segment.times(Mat4.scale(Vec.of(0.1, antennae_size, 0.1))), this.silver);
+    for (let i = 0; i < 8; i++)
+    {
+      current_segment = current_segment.times(Mat4.translation(Vec.of(0, antennae_size, 0.1))); //translate to hinge
+      current_segment = current_segment.times(Mat4.rotation(Math.PI/12 + Math.sin(2*this.t)*0.05, Vec.of(1,0,0))); //rotate and animate second segment
+      current_segment = current_segment.times(Mat4.translation(Vec.of(0, antennae_size, -0.1))); //translate back
+      this.shapes.box.draw(graphics_state, current_segment.times(Mat4.scale(Vec.of(0.1, antennae_size, 0.1))), this.silver);
+      // current_segment = current_segment.times(Mat4.translation(Vec.of(0, antennae_size, 0)));
+    }
+    current_segment = current_segment.times(Mat4.translation(Vec.of(0, 0.25, 0))); //translate to hinge
+    current_segment = current_segment.times(Mat4.rotation(Math.PI/12 + Math.sin(this.t)*0.05, Vec.of(1,0,0))); //rotate and animate second segment
+    current_segment = current_segment.times(Mat4.translation(Vec.of(0, 0.25, 0))); //translate back
+    this.shapes.ball.draw(graphics_state, current_segment.times(Mat4.scale(Vec.of(0.25, 0.25, 0.25))), this.yellow);
+  }
   
   display( graphics_state )
     { graphics_state.lights = [ new Light( Vec.of(  30, 30,  34, 1 ), Color.of( 0, .4, 0, 1 ), 100000 ),         // Lights for Phong_Shader to use
@@ -130,7 +150,16 @@ class Butterfly_Scene extends Scene_Component  // Code your butterfly assignment
       
       //drawing body
      
-      model_transform = model_transform.times( Mat4.translation( Vec.of( 0,10,0 ) ) );
+      model_transform = model_transform.times( Mat4.translation( Vec.of( 0,10,15 ) ) );
+      if(!this.hover)
+      {
+        model_transform = model_transform.times( Mat4.translation( Vec.of( 0,0,-15 ) ) );
+        model_transform = model_transform.times(Mat4.rotation(-this.t, Vec.of(0,1,0)));
+        model_transform = model_transform.times( Mat4.translation( Vec.of( 0,0,-15 ) ) );
+
+        model_transform = model_transform.times (Mat4.translation(Vec.of( 0, 3*Math.sin(2*this.t), 0)));
+      }
+
 
       this.draw_body(graphics_state, model_transform);
       //add wings to the body - on each side!
@@ -154,6 +183,20 @@ class Butterfly_Scene extends Scene_Component  // Code your butterfly assignment
         this.draw_leg(graphics_state, leg_transform_side_two);
         leg_transform_side_two = leg_transform_side_two.times(Mat4.translation(Vec.of(-2,0,0)));
       }
+
+      //travel to correct point on surface
+
+
+      for (let side of [1,-1])
+      { 
+        let antennae_transform = model_transform.times( Mat4.translation(Vec.of(body_size+head_radius,0,0))); //go to the center of the ball
+        antennae_transform = antennae_transform.times(Mat4.rotation(Math.PI/2 - side*Math.PI/4, Vec.of(0,1,0)));
+        antennae_transform = antennae_transform.times(Mat4.translation(Vec.of(-side,head_radius,0)));
+        
+        this.draw_antennae(graphics_state, antennae_transform);
+      }
+      //this.draw_antennae(graphics_state, antennae_transform.times(Mat4.rotation(Math.PI/4, Vec.of(0,1,0))));
+
       // model_transform = model_transform.times( Mat4.translation( Vec.of( 0,-( 1 + .2 ),0 ) ) );
       
       // this.shapes.box.draw( graphics_state, model_transform.times( Mat4.scale([ 3,.2,3 ]) ), this.yellow );
