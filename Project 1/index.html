@@ -58,18 +58,19 @@ class Butterfly_Scene extends Scene_Component  // Code your butterfly assignment
   draw_wings( graphics_state, model_transform)
   {
     //let's find the corner/hinge for the wing! we also have to move this to the top edge, we also take into account the width of the torso
-    let wing_transform = model_transform.times(Mat4.translation(Vec.of(body_size, 1.1, 1)));
+    let wing_transform = model_transform.times(Mat4.translation(Vec.of(body_size, 1, 1)));
     //now we rotate!
     wing_transform = wing_transform.times(Mat4.rotation(Math.PI/4,  Vec.of(0,1,0)));
-    //add the flapping animation
+    // //add the flapping animation
     wing_transform = wing_transform.times(Mat4.rotation(Math.sin(this.t)*0.5,  Vec.of(1,0,1)));
+    //translate to find the corner hinge
+    wing_transform = wing_transform.times(Mat4.translation(Vec.of(0, 0.1, 0)));
     //let's figure out wing size by doing some trig
     let wing_size = Math.cos(Math.PI/4)*body_size;
 
-    //and move it to the edge, we'll need to add wing size
-    wing_transform = wing_transform.times(Mat4.translation(Vec.of(-wing_size, 0, wing_size)));
-
     wing_transform = wing_transform.times(Mat4.scale(Vec.of(wing_size, 0.1, wing_size)));
+    //and move it to the edge, we'll need to add wing size
+    wing_transform = wing_transform.times(Mat4.translation(Vec.of(-1, 0, 1)));
 
     this.shapes.box.draw( graphics_state, wing_transform, this.blue);
     //now we draw the second diamond wing, let's first undo the rotation
