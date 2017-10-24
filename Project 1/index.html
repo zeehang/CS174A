@@ -25,7 +25,8 @@
 
 var body_size = 4,
     head_radius = 2,
-    tail_size = 3;
+    tail_size = 3,
+    leg_segment_size = 1;
  
 class Butterfly_Scene extends Scene_Component  // Code your butterfly assignment below.  It is an example of drawing a hierarchical object using a "model_transform" matrix.
 { constructor( context )
@@ -80,18 +81,10 @@ class Butterfly_Scene extends Scene_Component  // Code your butterfly assignment
     //re-rotate and draw the wings!
     wing_transform = wing_transform.times(Mat4.rotation(Math.PI/4,  Vec.of(0,1,0)));
     this.shapes.box.draw( graphics_state, wing_transform, this.blue);
-    
-    
-    // for (let side of [1,-1])
-    // {
-    //   let first = model_transform.times (Mat4.scale(1,side,1));
-    //   this.shapes.box.draw(graphics_state, first, this.blue);
-    // }
   }
 
   draw_body( graphics_state, model_transform )
   {
-
     this.shapes.box.draw( graphics_state, model_transform.times(Mat4.scale(Vec.of(body_size,1,1))), this.yellow);
 
     //draw head
@@ -101,7 +94,20 @@ class Butterfly_Scene extends Scene_Component  // Code your butterfly assignment
     //draw tail
     let tail_transform = model_transform.times(Mat4.translation(Vec.of(-body_size - tail_size,0,0)));
     this.shapes.ball.draw (graphics_state, tail_transform.times(Mat4.scale(Vec.of(tail_size, 1, 1))), this.yellow);
+  }
 
+  draw_leg( graphics_state, model_transform )
+  {
+    let first_segment = model_transform;
+    first_segment = first_segment.times(Mat4.translation(Vec.of(0, leg_segment_size, -0.2))); //translate to hinge
+    first_segment = first_segment.times(Mat4.rotation(-Math.PI/12 + Math.sin(this.t)*0.2, Vec.of(1,0,0))); //rotate and animate second segment
+    first_segment = first_segment.times(Mat4.translation(Vec.of(0, -leg_segment_size, 0.2))); //translate back
+    this.shapes.box.draw(graphics_state, first_segment.times(Mat4.scale(Vec.of(0.2, leg_segment_size, 0.2))), this.silver);
+    let second_segment = first_segment.times(Mat4.translation(Vec.of(0, -2*leg_segment_size, 0))); //location of second segment
+    second_segment = second_segment.times(Mat4.translation(Vec.of(0, leg_segment_size, -0.2))); //translate to hinge
+    second_segment = second_segment.times(Mat4.rotation(Math.PI/12 + Math.sin(this.t)*0.2, Vec.of(1,0,0))); //rotate and animate second segment
+    second_segment = second_segment.times(Mat4.translation(Vec.of(0, -leg_segment_size, 0.2))); //translate back
+    this.shapes.box.draw(graphics_state, second_segment.times(Mat4.scale(Vec.of(0.2, leg_segment_size, 0.2))), this.blue);
   }
   
   display( graphics_state )
@@ -127,11 +133,26 @@ class Butterfly_Scene extends Scene_Component  // Code your butterfly assignment
       model_transform = model_transform.times( Mat4.translation( Vec.of( 0,10,0 ) ) );
 
       this.draw_body(graphics_state, model_transform);
-
+      //add wings to the body - on each side!
       for (let side of [-1,1])
       {
         let flipped = model_transform.times(Mat4.scale(Vec.of(1,1,side)));
         this.draw_wings(graphics_state, flipped);
+      }
+      //add the legs to one side of the body
+      let leg_transform_side_one = model_transform.times( Mat4.translation( Vec.of( 3.8,-2,1.2 ) ) ); //account 0.2 for the width of the leg
+      for (let i = 0; i < 3; i++)
+      {
+        this.draw_leg(graphics_state, leg_transform_side_one);
+        leg_transform_side_one = leg_transform_side_one.times(Mat4.translation(Vec.of(-2,0,0)));
+      }
+      let leg_transform_side_two = model_transform.times( Mat4.translation( Vec.of( 3.8,-2,-1.2 ) ) ); //account 0.2 for the width of the leg
+      //flip the matrix because the legs should be facing in
+      leg_transform_side_two = leg_transform_side_two.times(Mat4.scale(Vec.of(1,1,-1)));
+      for (let i = 0; i < 3; i++)
+      {
+        this.draw_leg(graphics_state, leg_transform_side_two);
+        leg_transform_side_two = leg_transform_side_two.times(Mat4.translation(Vec.of(-2,0,0)));
       }
       // model_transform = model_transform.times( Mat4.translation( Vec.of( 0,-( 1 + .2 ),0 ) ) );
       
