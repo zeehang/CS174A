@@ -50,6 +50,34 @@ class Butterfly_Scene extends Scene_Component  // Code your butterfly assignment
     { const arm = model_transform.times( Mat4.translation([ 0,0,3+1 ]) );
       this.shapes.ball.draw( graphics_state, arm, this.blue );
     }
+  draw_wings( graphics_state, model_transform)
+  {
+    //we've made our main torso 3 units long, so let's do some trig to figure out wing length
+    let side_length = Math.tan((Math.PI)/4)*3;
+    model_transform = model_transform.times(Mat4.translation(Vec.of(4,1,5.25)));
+    model_transform = model_transform.times( Mat4.rotation( (Math.PI)/4, Vec.of( 0,1,0 ) ) );
+    model_transform = model_transform.times( Mat4.translation(Vec.of(0,0,0)));
+    this.shapes.box.draw(graphics_state, model_transform.times( Mat4.scale(Vec.of(side_length,0.1,side_length))), this.blue);
+    // for (let side of [1,-1])
+    // {
+    //   let first = model_transform.times (Mat4.scale(1,side,1));
+    //   this.shapes.box.draw(graphics_state, first, this.blue);
+    // }
+  }
+  draw_body( graphics_state, model_transform )
+  {
+    this.shapes.box.draw( graphics_state, model_transform.times( Mat4.scale(Vec.of(4,1,1))), this.yellow );
+
+    model_transform = model_transform.times (Mat4.translation(Vec.of(6,0,0)));
+    
+    this.shapes.ball.draw (graphics_state, model_transform.times( Mat4.scale(Vec.of(2,2,2))), this.red);
+
+    model_transform = model_transform.times (Mat4.translation(Vec.of(-13,0,0)));
+    
+    this.shapes.ball.draw (graphics_state, model_transform.times( Mat4.scale(Vec.of(3,1,1))), this.yellow);
+
+    model_transform = model_transform.times (Mat4.translation(Vec.of(3,1,-4)));
+  }
   display( graphics_state )
     { graphics_state.lights = [ new Light( Vec.of(  30, 30,  34, 1 ), Color.of( 0, .4, 0, 1 ), 100000 ),         // Lights for Phong_Shader to use
                                 new Light( Vec.of( -10, 20, -14, 0 ), Color.of( 1, 1, .3, 1 ), 100    ) ]
@@ -62,14 +90,7 @@ class Butterfly_Scene extends Scene_Component  // Code your butterfly assignment
                                                                               // for you -- freely replace them with your own!                          
                                 
                                 
-      
-
-
-
-
-
-
-      
+    
       this.shapes.box.draw( graphics_state, Mat4.scale([ 15,.1,15 ]), this.green );                           // Ground plane.                          
       
       this.t = graphics_state.animation_time/1000;      
@@ -79,25 +100,9 @@ class Butterfly_Scene extends Scene_Component  // Code your butterfly assignment
      
       model_transform = model_transform.times( Mat4.translation( Vec.of( 0,10,0 ) ) );
 
-      model_transform = model_transform.times( Mat4.scale(Vec.of(4,1,1)));
-      
-      // if( !this.hover ) model_transform = model_transform.times( Mat4.rotation( -this.t, Vec.of( 0,1,0 ) ) );
-      
-      this.shapes.box.draw( graphics_state, model_transform, this.yellow );
+      this.draw_body(graphics_state, model_transform);
 
-      model_transform = model_transform.times( Mat4.scale(Vec.of(1/4,1,1)));
-      model_transform = model_transform.times( Mat4.scale(Vec.of(2,2,2)));
-
-      model_transform = model_transform.times (Mat4.translation(Vec.of(3,0,0)));
-      
-      this.shapes.ball.draw (graphics_state, model_transform, this.red);
-
-      model_transform = model_transform.times (Mat4.translation(Vec.of(-6.5,0,0)));
-
-      model_transform = model_transform.times( Mat4.scale(Vec.of(1/2,1/2,1/2)));
-      model_transform = model_transform.times( Mat4.scale(Vec.of(3,1,1)));
-      
-      this.shapes.ball.draw (graphics_state, model_transform, this.yellow);
+      this.draw_wings(graphics_state, model_transform);
       // model_transform = model_transform.times( Mat4.translation( Vec.of( 0,-( 1 + .2 ),0 ) ) );
       
       // this.shapes.box.draw( graphics_state, model_transform.times( Mat4.scale([ 3,.2,3 ]) ), this.yellow );
