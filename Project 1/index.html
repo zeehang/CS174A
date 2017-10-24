@@ -61,6 +61,8 @@ class Butterfly_Scene extends Scene_Component  // Code your butterfly assignment
     let wing_transform = model_transform.times(Mat4.translation(Vec.of(body_size, 1.1, 1)));
     //now we rotate!
     wing_transform = wing_transform.times(Mat4.rotation(Math.PI/4,  Vec.of(0,1,0)));
+    //add the flapping animation
+    wing_transform = wing_transform.times(Mat4.rotation(Math.sin(this.t)*0.5,  Vec.of(1,0,1)));
     //let's figure out wing size by doing some trig
     let wing_size = Math.cos(Math.PI/4)*body_size;
 
