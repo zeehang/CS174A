@@ -118,14 +118,14 @@ class Butterfly_Scene extends Scene_Component  // Code your butterfly assignment
     this.shapes.box.draw(graphics_state, current_segment.times(Mat4.scale(Vec.of(0.1, antennae_size, 0.1))), this.silver);
     for (let i = 0; i < 8; i++)
     {
-      current_segment = current_segment.times(Mat4.translation(Vec.of(0, antennae_size, 0.1))); //translate to hinge
-      current_segment = current_segment.times(Mat4.rotation(Math.PI/12 + Math.sin(2*this.t)*0.05, Vec.of(1,0,0))); //rotate and animate second segment
-      current_segment = current_segment.times(Mat4.translation(Vec.of(0, antennae_size, -0.1))); //translate back
+      current_segment = current_segment.times(Mat4.translation(Vec.of(0.1, antennae_size, 0))); //translate to hinge
+      current_segment = current_segment.times(Mat4.rotation(Math.PI/12 + Math.sin(2*this.t)*0.05, Vec.of(0,0,-1))); //rotate and animate second segment
+      current_segment = current_segment.times(Mat4.translation(Vec.of(-0.1, antennae_size, 0))); //translate back
       this.shapes.box.draw(graphics_state, current_segment.times(Mat4.scale(Vec.of(0.1, antennae_size, 0.1))), this.silver);
       // current_segment = current_segment.times(Mat4.translation(Vec.of(0, antennae_size, 0)));
     }
     current_segment = current_segment.times(Mat4.translation(Vec.of(0, 0.25, 0))); //translate to hinge
-    current_segment = current_segment.times(Mat4.rotation(Math.PI/12 + Math.sin(this.t)*0.05, Vec.of(1,0,0))); //rotate and animate second segment
+    current_segment = current_segment.times(Mat4.rotation(Math.PI/12 + Math.sin(this.t)*0.05, Vec.of(0,0,-1))); //rotate and animate second segment
     current_segment = current_segment.times(Mat4.translation(Vec.of(0, 0.25, 0))); //translate back
     this.shapes.ball.draw(graphics_state, current_segment.times(Mat4.scale(Vec.of(0.25, 0.25, 0.25))), this.yellow);
   }
@@ -186,25 +186,15 @@ class Butterfly_Scene extends Scene_Component  // Code your butterfly assignment
 
       //travel to correct point on surface
 
-
       for (let side of [1,-1])
       { 
         let antennae_transform = model_transform.times( Mat4.translation(Vec.of(body_size+head_radius,0,0))); //go to the center of the ball
-        antennae_transform = antennae_transform.times(Mat4.rotation(Math.PI/2 - side*Math.PI/4, Vec.of(0,1,0)));
-        antennae_transform = antennae_transform.times(Mat4.translation(Vec.of(-side,head_radius,0)));
+        antennae_transform = antennae_transform.times(Mat4.rotation(side*Math.PI/6, Vec.of(-1,1,0)));
+        antennae_transform = antennae_transform.times(Mat4.translation(Vec.of(0,head_radius+antennae_size,0)));
         
         this.draw_antennae(graphics_state, antennae_transform);
       }
-      //this.draw_antennae(graphics_state, antennae_transform.times(Mat4.rotation(Math.PI/4, Vec.of(0,1,0))));
-
-      // model_transform = model_transform.times( Mat4.translation( Vec.of( 0,-( 1 + .2 ),0 ) ) );
-      
-      // this.shapes.box.draw( graphics_state, model_transform.times( Mat4.scale([ 3,.2,3 ]) ), this.yellow );
-      //                                                                               // Each loop iteration, the following will draw the same thing on a different side due to a reflection:
-      // for( let side of [-1,1] )                                                     // For each of the two values -1 and 1,
-      // { let flipped = model_transform.times( Mat4.scale([ 1,1,side ]) );            // Reflect the coordinate system (or not) depending on the value.
-      //   this.draw_arm( graphics_state, flipped );                                   // Example of how to call your own function, passing in your matrix.
-      // }                                                                             
+                                                                          
     }    
 }
 </script>
