@@ -152,11 +152,12 @@ class Butterfly_Scene extends Scene_Component  // Code your butterfly assignment
      
       model_transform = model_transform.times( Mat4.translation( Vec.of( 0,10,15 ) ) );
       if(!this.hover)
-      {
+      { 
+        //rotates in a circle around the origin
         model_transform = model_transform.times( Mat4.translation( Vec.of( 0,0,-15 ) ) );
         model_transform = model_transform.times(Mat4.rotation(-this.t, Vec.of(0,1,0)));
         model_transform = model_transform.times( Mat4.translation( Vec.of( 0,0,-15 ) ) );
-
+        //bobs up and down in sync with wing flapping
         model_transform = model_transform.times (Mat4.translation(Vec.of( 0, 3*Math.sin(2*this.t), 0)));
       }
 
@@ -176,7 +177,7 @@ class Butterfly_Scene extends Scene_Component  // Code your butterfly assignment
         leg_transform_side_one = leg_transform_side_one.times(Mat4.translation(Vec.of(-2,0,0)));
       }
       let leg_transform_side_two = model_transform.times( Mat4.translation( Vec.of( 3.8,-2,-1.2 ) ) ); //account 0.2 for the width of the leg
-      //flip the matrix because the legs should be facing in
+      //flip the matrix because the legs should be facing in, and add legs to the other side of the body!
       leg_transform_side_two = leg_transform_side_two.times(Mat4.scale(Vec.of(1,1,-1)));
       for (let i = 0; i < 3; i++)
       {
@@ -184,13 +185,11 @@ class Butterfly_Scene extends Scene_Component  // Code your butterfly assignment
         leg_transform_side_two = leg_transform_side_two.times(Mat4.translation(Vec.of(-2,0,0)));
       }
 
-      //travel to correct point on surface
-
       for (let side of [1,-1])
       { 
-        let antennae_transform = model_transform.times( Mat4.translation(Vec.of(body_size+head_radius,0,0))); //go to the center of the ball
-        antennae_transform = antennae_transform.times(Mat4.rotation(side*Math.PI/6, Vec.of(-1,1,0)));
-        antennae_transform = antennae_transform.times(Mat4.translation(Vec.of(0,head_radius+antennae_size,0)));
+        let antennae_transform = model_transform.times( Mat4.translation(Vec.of(body_size+head_radius,0,0))); //go to the center of the head
+        antennae_transform = antennae_transform.times(Mat4.rotation(side*Math.PI/6, Vec.of(-1,1,0))); //rotate coord system in preparation for translation
+        antennae_transform = antennae_transform.times(Mat4.translation(Vec.of(0,head_radius+antennae_size,0))); //translate to the surface
         
         this.draw_antennae(graphics_state, antennae_transform);
       }
