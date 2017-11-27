@@ -480,5 +480,6 @@ class Global_Info_Table extends Scene_Component  // A class that just toggles, m
       this.live_string( () => { return globals.animate ? " " : " (paused)" } );  this.new_line();
       this.key_triggered_button( "Gouraud shading",     "ALT+g", function() { globals.graphics_state.gouraud       ^= 1;         } ); this.new_line();
       this.key_triggered_button( "Normals shading",     "ALT+n", function() { globals.graphics_state.color_normals ^= 1;         } ); this.new_line();
+      this.live_string( () => { return "Frame rate: "  + ((1000/globals.graphics_state.animation_delta_time).toFixed(3))}); this.new_line();
     }
 }
