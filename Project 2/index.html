@@ -6,7 +6,7 @@
   window.onload = function init()        // ********************* THE ENTRY POINT OF THE WHOLE PROGRAM STARTS HERE ********************* 
     { window.contexts = {};                                                            // A global variable, "contexts".  Browsers support up to 16 WebGL contexts per page.
       
-      const scenes  = [ "Tutorial_Animation", "Movement_Controls", "Global_Info_Table" ]; // Register some scenes to the "Canvas_Manager" object -- which WebGL calls
+      const scenes  = [ "White_House", "Movement_Controls", "Global_Info_Table" ]; // Register some scenes to the "Canvas_Manager" object -- which WebGL calls
                                                                                        // upon every time a draw / keyboard / mouse event happens.  
       
       if( eval( "typeof " + scenes[0] ) !== "undefined" )
@@ -47,7 +47,285 @@
         }, false);      
     }
 
-// Below is the demo you will see when you run the program!    
+// Below is the demo you will see when you run the program! 
+
+class White_House extends Scene_Component
+{ constructor( context )
+  { super(context);
+    var shapes = {
+      'cube' : new Cube(),
+      'pyramid' : new Pyramid(),
+      'square' : new Square(),
+      'sphere' : new Subdivision_Sphere(4),
+      'tetrahedron' : new Tetrahedron( true ),
+      'triangle' : new Triangle(),
+      'lightbox' : new LightBox(),
+      'env' : new Cylindrical_Tube(20, 20, [[0,1],[0,1]])
+    };
+    var MOVING_TRUE = 1;
+    var MOVING_FALSE = 0;
+    this.submit_shapes (context, shapes);
+
+    Object.assign( context.globals.graphics_state, { camera_transform: Mat4.translation([ 0, 0,-25 ]), projection_transform: Mat4.perspective( Math.PI/4, context.width/context.height, .1, 1000 ) } );
+
+    //we can assign materials here
+    Object.assign( this, { hover: false, t: 0,                  // Define a couple of data members of a Butterfly_Scene.
+                        yellow: context.get_instance( Phong_Model ).material( Color.of( .8, .8, .3,  1 ), .2, 1, .7, 40 ),  // Call material() on the Phong_Shader,
+                        brown:  context.get_instance( Phong_Model ).material( Color.of( .3, .3, .1,  1 ), .2, 1,  1, 40 ),  // which returns a special-made "material" 
+                        red:    context.get_instance( Phong_Model ).material( Color.of(  1,  0,  0, .9 ), .1, .7, 1, 40 ),  // (a JavaScript object)
+                        green:  context.get_instance( Phong_Model ).material( Color.of(  0, .5,  0,  1 ), .1, .7, 1, 40 ),
+                        blue:   context.get_instance( Phong_Model ).material( Color.of(  0,  0,  1, .8 ), .1, .7, 1, 40 ),
+                        darkgray:   context.get_instance( Phong_Model ).material( Color.of(  .95,  .95,  .95, 1 ), .01, .25, .25, 100 ),
+                        silver: context.get_instance( Phong_Model ).material( Color.of( .8, .8, .8,  1 ),  0,  1, 1, 40 ),
+                        trump:  context.get_instance( Phong_Model ).material( Color.of( 0, 0, 0, 1     ),  1, .8, .8, 100, context.get_instance("assets/trump-square.png")),
+                        carpet:  context.get_instance( Phong_Model ).material( Color.of( 0, 0, 0, 1     ),  1, .8, .8, 100, context.get_instance("assets/house-rug.jpg")),
+                        hair:  context.get_instance( Phong_Model ).material( Color.of( 0, 0, 0, 1     ),  1, .8, .8, 100, context.get_instance("assets/hair.png")),
+                        wall:  context.get_instance( Phong_Model ).material( Color.of( 0, 0, 0, 1     ),  1, .8, .8, 100, context.get_instance("assets/wall.jpg")),
+                        rug:  context.get_instance( Phong_Model ).material( Color.of( 0, 0, 0, 1     ),  1, .8, .8, 100, context.get_instance("assets/rug.jpg")),
+                        sky:  context.get_instance( Phong_Model ).material( Color.of( 0, 0, 0, 1     ),  1, .8, .8, 100, context.get_instance("assets/sky.JPG")),
+                        deskfront:  context.get_instance( Phong_Model ).material( Color.of( 0, 0, 0, 1     ),  1, .8, .8, 100, context.get_instance("assets/desk_front.jpg")),
+                        deskother:  context.get_instance( Phong_Model ).material( Color.of( 0, 0, 0, 1     ),  1, .8, .8, 100, context.get_instance("assets/desk_other.jpg")),
+                        bark:  context.get_instance( Phong_Model ).material( Color.of( 0, 0, 0, 1     ),  1, .8, .8, 100, context.get_instance("assets/bark.png")),
+                        foilage:  context.get_instance( Phong_Model ).material( Color.of( 0, 0, 0, 1     ),  1, .8, .8, 100, context.get_instance("assets/foilage.png")),
+                        twittersplash:  context.get_instance( Phong_Model ).material( Color.of( 0, 0, 0, 1     ),  1, .8, .8, 100, context.get_instance("assets/twitter-splash.png")),
+                        grass:  context.get_instance( Phong_Model ).material( Color.of(  0,  .5,  0, 1),   .5,  .2,  .2, 40, context.get_instance( "assets/grass.jpeg" )) } );
+  }
+
+  drawLegs(graphics_state, model_transform, moving, t)
+  {
+    let left_leg = model_transform.times(Mat4.translation([0.75,-4,0]));
+    let right_leg = model_transform.times(Mat4.translation([-0.75,-4,0]));
+
+    if(moving) {
+      right_leg = right_leg.times(Mat4.translation([0,2,0]));
+      right_leg = right_leg.times(Mat4.rotation(Math.sin(t*3), Vec.of(1,0,0)));
+      right_leg = right_leg.times(Mat4.translation([0,-2,0]));
+      left_leg = left_leg.times(Mat4.translation([0,1,0]));
+      left_leg = left_leg.times(Mat4.rotation(Math.sin(-3*t), Vec.of(1,0,0)));
+      left_leg = left_leg.times(Mat4.translation([0,-1,-0]));
+    }
+
+    this.shapes.cube.draw(graphics_state, left_leg.times(Mat4.scale([0.75, 2, 1])), this.darkgray);
+    this.shapes.cube.draw(graphics_state, right_leg.times(Mat4.scale([0.75, 2, 1])), this.darkgray);
+  }
+
+  drawArms(graphics_state, model_transform, moving, t)
+  {
+    //draw one arm
+    let left_arm = model_transform.times(Mat4.translation([2,0,0]));
+    //draw the other arm
+    let right_arm = model_transform.times(Mat4.translation([-2, 0, 0]));
+    // are they moving (swinging?)
+    if(moving) { //if moving let's make the arms swing
+      left_arm = left_arm.times(Mat4.translation([0,1,0]));
+      left_arm = left_arm.times(Mat4.rotation(Math.sin(t*3), Vec.of(1,0,0)));
+      left_arm = left_arm.times(Mat4.translation([0,-1,0]));
+      right_arm = right_arm.times(Mat4.translation([0,1,0]));
+      right_arm = right_arm.times(Mat4.rotation(Math.sin(-3*t), Vec.of(1,0,0)));
+      right_arm = right_arm.times(Mat4.translation([0,-1,0]));
+    }
+
+    this.shapes.cube.draw(graphics_state, left_arm.times(Mat4.scale([0.5, 2, 1])), this.darkgray);
+    this.shapes.cube.draw(graphics_state, right_arm.times(Mat4.scale([0.5, 2, 1])), this.darkgray);
+    left_arm = left_arm.times(Mat4.translation([0,-2.2,0]));
+    right_arm = right_arm.times(Mat4.translation([0,-2.2,0]));
+    this.shapes.cube.draw(graphics_state, left_arm.times(Mat4.scale([0.5, 0.2, 1])), this.silver);
+    this.shapes.cube.draw(graphics_state, right_arm.times(Mat4.scale([0.5, 0.2, 1])), this.silver);
+  }
+
+  drawHead(graphics_state, model_transform)
+  {
+    model_transform = model_transform.times(Mat4.translation([0,3,0]));
+    this.shapes.cube.draw(graphics_state, model_transform.times(Mat4.scale([1,1,1])), this.trump);
+    //draw the hair
+    model_transform = model_transform.times(Mat4.translation([0,0,-0.15]));
+    this.shapes.cube.draw(graphics_state, model_transform.times(Mat4.scale([1.1,1.1,1.1])), this.hair);
+  }
+
+  drawTie(graphics_state, model_transform, moving, t)
+  {
+    let bottom_tie = model_transform;
+    model_transform = model_transform.times(Mat4.translation([0,-1,0]));
+    model_transform = model_transform.times(Mat4.scale([0.5,3,1]));
+    //model_transform = model_transform.times(Mat4.rotation(Math.PI/4, Vec.of(0,0,1)));
+    this.shapes.triangle.draw(graphics_state, model_transform, this.red);
+    model_transform = model_transform.times(Mat4.scale([-1,1,1]));
+    this.shapes.triangle.draw(graphics_state, model_transform, this.red);
+
+    bottom_tie = bottom_tie.times(Mat4.translation([0,-1.7,0]));
+    bottom_tie = bottom_tie.times(Mat4.scale([0.75,1,1]));
+    bottom_tie = bottom_tie.times(Mat4.rotation(Math.PI/4, Vec.of(0,0,1)));
+    this.shapes.triangle.draw(graphics_state, bottom_tie, this.red);
+  }
+
+  drawTorso(graphics_state, model_transform, moving, t)
+  {
+    this.shapes.cube.draw(graphics_state, model_transform.times(Mat4.scale([1.5, 2, 1])), this.darkgray);
+    model_transform = model_transform.times(Mat4.translation([0,0,1.1]));
+    model_transform = model_transform.times(Mat4.translation([0,2,0]));
+    model_transform = model_transform.times(Mat4.rotation(0.25*Math.sin(3*t), Vec.of(0,0,1)));
+    model_transform = model_transform.times(Mat4.translation([0,-2,0]));
+    this.drawTie(graphics_state, model_transform, moving, t);
+  }
+  
+  drawPhone(graphics_state, model_transform)
+  {
+    model_transform = model_transform.times(Mat4.rotation(Math.PI, Vec.of(0,1,0)))
+    this.shapes.cube.draw(graphics_state, model_transform.times(Mat4.scale([2,0.1,3.5])), this.twittersplash);
+    this.shapes.cube.draw(graphics_state, model_transform.times(Mat4.scale([3,0.05,4])), this.darkgray);
+  }
+  
+  drawDesk(graphics_state, model_transform)
+  {
+    this.drawPhone(graphics_state, model_transform.times(Mat4.translation([0,6,0])));
+    let other_transform = model_transform.times(Mat4.translation([0,0,-0.5]));
+    model_transform = model_transform.times(Mat4.scale([10,5,5]));
+    other_transform = other_transform.times(Mat4.scale([9.9,5.1,5.1]));
+    this.shapes.cube.draw(graphics_state, model_transform, this.deskfront);
+    this.shapes.cube.draw(graphics_state, other_transform, this.deskother);
+  }
+
+  drawHuman(graphics_state, model_transform, moving, t)
+  {
+    this.drawTorso(graphics_state, model_transform, moving, t);
+    this.drawHead(graphics_state, model_transform);
+    this.drawArms(graphics_state, model_transform, moving, t);
+    this.drawLegs(graphics_state, model_transform, moving, t);
+  }
+
+  drawWHInterior(graphics_state, model_transform)
+  {
+    model_transform = model_transform.times(Mat4.translation([0,18.5,0]));
+    let ground_transform = model_transform;
+    ground_transform = ground_transform.times(Mat4.translation([0,-25,0]));
+    this.shapes.cube.draw( graphics_state, ground_transform.times(Mat4.scale([ 60,.1,60 ])), this.rug );
+    model_transform = model_transform.times(Mat4.rotation(Math.PI/2, Vec.of(1,0,0)));
+    model_transform = model_transform.times(Mat4.scale([60,60,60]));
+    this.shapes.env.draw(graphics_state, model_transform, this.wall);
+  }
+
+  drawHelicopter(graphics_state, model_transform, t)
+  {
+
+  }
+
+  drawTree(graphics_state, model_transform)
+  {
+    this.shapes.cube.draw(graphics_state, model_transform.times(Mat4.scale([1,4,1])), this.bark);
+    model_transform = model_transform.times(Mat4.translation([0,4,0]));
+    this.shapes.pyramid.draw(graphics_state, model_transform.times(Mat4.scale([4,8,4])), this.foilage);
+  }
+
+  drawWHExterior(graphics_state, model_transform)
+  {
+
+  }
+
+  getRandomInt(min, max) 
+  {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min)) + min; //The maximum is exclusive and the minimum is inclusive
+  }
+
+  drawExteriorScene(graphics_state, model_transform, t)
+  {
+    this.shapes.cube.draw( graphics_state, model_transform.times(Mat4.scale([ 90,.1,75 ])), this.grass );
+    let background_sky = model_transform.times(Mat4.translation([0,35,-80]));
+    this.shapes.square.draw(graphics_state, background_sky.times(Mat4.scale([105,50,1])), this.sky);
+    let tree_fun = model_transform.times(Mat4.translation([0,0,25]));
+    let tree_fun_other = model_transform.times(Mat4.translation([0,0,25]));
+    for(var i = 0; i < 10; i++)
+    {
+      tree_fun = tree_fun.times(Mat4.translation([10,0,0]));
+      tree_fun_other = tree_fun_other.times(Mat4.translation([-10,0,0]));
+      if(i >= 0)
+      {
+        this.drawTree(graphics_state, tree_fun);
+        this.drawTree(graphics_state, tree_fun_other);
+      }
+    }
+    tree_fun = model_transform.times(Mat4.translation([5,0,40]));
+    tree_fun_other = model_transform.times(Mat4.translation([5,0,40]));
+    for(var i = 0; i < 10; i++)
+    {
+      tree_fun = tree_fun.times(Mat4.translation([10,0,0]));
+      tree_fun_other = tree_fun_other.times(Mat4.translation([-10,0,0]));
+      if(i >= 0)
+      {
+        this.drawTree(graphics_state, tree_fun);
+        this.drawTree(graphics_state, tree_fun_other);
+      }
+    }
+    tree_fun = model_transform.times(Mat4.translation([-7.5,0,55]));
+    tree_fun_other = model_transform.times(Mat4.translation([-7.5,0,55]));
+    for(var i = 0; i < 10; i++)
+    {
+      tree_fun = tree_fun.times(Mat4.translation([10,0,0]));
+      tree_fun_other = tree_fun_other.times(Mat4.translation([-10,0,0]));
+      if(i >= 0)
+      {
+        this.drawTree(graphics_state, tree_fun);
+        this.drawTree(graphics_state, tree_fun_other);
+      }
+    }
+      
+  }
+
+  drawInteriorScene(graphics_state, model_transform, t)
+  {
+    this.t -=t;
+    console.log(t);
+    this.drawWHInterior(graphics_state, model_transform);
+    this.drawDesk(graphics_state, model_transform.times(Mat4.translation([0,-1,25]).times(Mat4.scale([1,1,-1]))));
+    model_transform = model_transform.times(Mat4.scale([2,2,2]));
+    model_transform = model_transform.times(Mat4.translation([0,3,0]));
+    if(t > 10.5)
+    {
+      graphics_state.camera_transform = Mat4.look_at( Vec.of(45,28,0), Vec.of( 0,0,-25+5.5*6 ), Vec.of( 0,1,0 ) );
+      this.drawHuman(graphics_state, model_transform.times(Mat4.translation([0,0,-25+ 5.5*6])), false, t);
+    }
+    else if(t < 5)
+    {
+      graphics_state.camera_transform = Mat4.look_at( Vec.of(45,28,0), Vec.of( 0,0,-25 ), Vec.of( 0,1,0 ) );
+      this.drawHuman(graphics_state, model_transform.times(Mat4.translation([0,0,-25])), false, t);
+    }
+    else if ( t > 5 && t < 10.5)
+    { 
+      graphics_state.camera_transform = Mat4.look_at( Vec.of(45,28,0), Vec.of( 0,0,-25+6*(t-5) ), Vec.of( 0,1,0 ) );
+      this.drawHuman(graphics_state, model_transform.times(Mat4.translation([0,0,-25+ 6*(t-5)])), true, t);
+    } 
+
+    
+  }
+
+  display( graphics_state )
+  { 
+    var t = graphics_state.animation_time/1000;
+    graphics_state.lights = [ new Light( Vec.of(  30, 30,  34, 1 ), Color.of( 0, .4, 0, 1 ), 100000 ),         // Lights for Phong_Shader to use
+                              new Light( Vec.of( -10, 20, -14, 0 ), Color.of( 1, 1, .3, 1 ), 100    ) ]
+    
+    var model_transform = Mat4.identity(); 
+    var interpolatedVector = Vec.of(0,100,0).mix( Vec.of(0,0,0), 3);
+    this.drawExteriorScene(graphics_state, model_transform, t)
+    //var pyramid_camera_test = Mat4.look_at(interpolatedVector, Vec.of(0,5,0), Vec.of( 0,1,0 ));
+    //this.shapes.cube.draw( graphics_state, Mat4.scale([ 15,.1,15 ]), this.grass );
+    /*pyramid_camera_test = Mat4.inverse(pyramid_camera_test);
+    pyramid_camera_test.times(Mat4.translation(-10,-10,Math.sin(t)));*/
+    //this.shapes.pyramid.draw(graphics_state, model_transform, this.grass);
+    //this.drawInteriorScene(graphics_state, model_transform, t);
+    //this.shapes.cube.draw(graphics_state, model_transform.times(Mat4.scale([200,200,200])), this.grass);
+    /*pyramid_camera_test = Mat4.inverse(pyramid_camera_test);*/
+    //graphics_state.camera_transform = pyramid_camera_test;
+
+  //-----------------
+    /*var pyramid_move = model_transform.times(Mat4.translation([0,0,Math.sin(t)]));
+    this.shapes.pyramid.draw( graphics_state, pyramid_move, this.grass);
+     var looker = Mat4.look_at( Vec.of( 0,6,0 ), Vec.of(0,0,1), Vec.of( 0,1,0 ) ); //eye at up
+    graphics_state.camera_transform = looker; */
+    
+  }
+}   
   
 class Tutorial_Animation extends Scene_Component  // An example of a Scene_Component that our class Canvas_Manager can manage.  Like most, this one draws 3D shapes.
 { constructor( context )

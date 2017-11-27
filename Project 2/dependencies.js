@@ -23,6 +23,36 @@ class Square extends Shape      // A square, demonstrating shared vertices.  On 
     }
 }
 
+class Pyramid extends Shape
+{ constructor()
+  { super();
+    // this.positions    .push( ...Vec.cast( //we're going to do this by building 6 triangles that make it up
+    this.positions.push(...Vec.cast(
+                                      [-1,0,1], [1,0,1], [-1,0,-1],
+                                      [-1,0,-1], [1,0,1], [1,0,-1],
+                                      [-1,0,-1], [1,0,-1], [0,1,0],
+                                      [-1,0,-1], [-1,0,1], [0,1,0],
+                                      [-1,0,1], [1,0,1], [0,1,0],
+                                      [1,0,1],[1,0,-1],[0,1,0]));
+    this.normals.push(...Vec.cast(
+                                      [0,-1,0],[0,-1,0],[0,-1,0],
+                                      [0,-1,0],[0,-1,0],[0,-1,0],
+                                      [0,1,-1],[0,1,-1],[0,1,-1],
+                                      [0,1,-1],[0,1,-1],[0,1,-1],
+                                      [0,1,1],[0,1,1],[0,1,1],
+                                      [1,1,0],[1,1,0],[1,1,0]));
+    this.texture_coords.push( ...Vec.cast( [0,0], [1,0], [1,1],      // Each face in Method 2 also gets its own set of texture coords
+                                      [0,0], [1,0], [1,1],      //(half the image is mapped onto each face).  We couldn't do this
+                                      [0,0], [1,0], [1,1],      // with shared vertices since this features abrupt transitions
+                                      [0,0], [1,0], [1,1],
+                                      [0,0], [1,0], [1,1],
+                                      [0,0], [1,0], [1,1]) );  // when approaching the same point from different directions.
+
+    this.indices.push( 0, 1, 2,    3, 4, 5,    6, 7, 8,    9, 10, 11 , 12, 13, 14, 15,16,17 );
+  }
+
+}
+
   // *********** TETRAHEDRON ***********
 class Tetrahedron extends Shape            // A demo of flat vs smooth shading (a boolean argument selects which one). Also our first 3D, non-planar shape.
 { constructor( using_flat_shading ) 
@@ -113,6 +143,72 @@ class Subdivision_Sphere extends Shape  // A subdivision surface ( see Wikipedia
       this.subdivideTriangle( ac, bc, c,  count - 1 );      // so on, due to the way we're building it.
       this.subdivideTriangle( ab, bc, ac, count - 1 );
     }
+}
+
+class Grid_Patch extends Shape                          // A deformed grid of rows and columns. A tesselation of triangles connects the points, by generating a certain 
+{  constructor( rows, columns, next_row_function, next_column_function, texture_coord_range = [ [ 0, rows ], [ 0, columns ] ]  )      // predictable pattern of indices.
+    { super();                                                                     // Two callbacks allow you to dynamically define how to reach the next row or column.
+      let points = [];
+      for( let r = 0; r <= rows; r++ ) 
+      { points.push( new Array( columns+1 ) );                                                  // Allocate a 2D array
+        points[ r ][ 0 ] = next_row_function( r/rows, points[ r-1 ] && points[ r-1 ][ 0 ] );    // Use next_row_function to generate the start point of each row.
+      }                                                                                         //   Include the previous point if it existed.      
+      for(   let r = 0; r <= rows;    r++ )
+        for( let c = 0; c <= columns; c++ )
+        { if( c > 0 ) points[r][ c ] = next_column_function( c/columns, points[r][ c-1 ], r/rows );           // From those, use next_column function to generate the remaining points.
+      
+          this.positions.push( points[r][ c ] );        
+          const a1 = c/columns, a2 = r/rows, x_range = texture_coord_range[0], y_range = texture_coord_range[1];
+          this.texture_coords.push( Vec.of( ( a1 )*x_range[1] + ( 1-a1 )*x_range[0], ( a2 )*y_range[1] + ( 1-a2 )*y_range[0] ) );    // Interpolate texture coords from a range.
+        }
+      for(   let r = 0; r <= rows;    r++ )                                                   // Generate normals by averaging the cross products of all defined neighbor pairs.
+        for( let c = 0; c <= columns; c++ )
+        { let curr = points[r][c], neighbors = new Array(4), normal = Vec.of( 0,0,0 );          
+          for( let [ i, dir ] of [ [ -1,0 ], [ 0,1 ], [ 1,0 ], [ 0,-1 ] ].entries() )         // Store each neighbor by rotational order.
+            neighbors[i] = points[ r + dir[1] ] && points[ r + dir[1] ][ c + dir[0] ];        // Leave "undefined" in the array wherever we hit a boundary.
+          
+          for( let i = 0; i < 4; i++ )                                                        // Cross pairs of neighbors, proceeding the same rotational direction through the pairs.
+            if( neighbors[i] && neighbors[ (i+1)%4 ] ) normal = normal.plus( neighbors[i].minus( curr ).cross( neighbors[ (i+1)%4 ].minus( curr ) ) );          
+          normal.normalize();                                                                 // Normalize the sum to get the average vector.
+          
+          if( normal.every( x => x == x ) && normal.norm() > .01 )  this.normals.push( Vec.from( normal ) );    // Store the normal if it's valid (not NaN or zero length)
+          else                                                      this.normals.push( Vec.of( 0,0,1 )    );    // Otherwise use a default.
+        }   
+        
+      for( var h = 0; h < rows; h++ )             // Generate a sequence like this (if #columns is 10):  "1 11 0  11 1 12  2 12 1  12 2 13  3 13 2  13 3 14  4 14 3..." 
+        for( var i = 0; i < 2 * columns; i++ )
+          for( var j = 0; j < 3; j++ )
+            this.indices.push( h * ( columns + 1 ) + columns * ( ( i + ( j % 2 ) ) % 2 ) + ( ~~( ( j % 3 ) / 2 ) ? 
+                                   ( ~~( i / 2 ) + 2 * ( i % 2 ) )  :  ( ~~( i / 2 ) + 1 ) ) );
+    }
+  static sample_array( array, ratio )                                           // Optional.  In an array of points, intepolate the pair of points that our progress ratio falls between.
+    { const frac = ratio * ( array.length - 1 ), alpha = frac - Math.floor( frac );
+      return array[ Math.floor( frac ) ].mix( array[ Math.ceil( frac ) ], alpha );
+    }
+  }
+
+class Surface_Of_Revolution extends Grid_Patch
+// SURFACE OF REVOLUTION: Produce a curved "sheet" of triangles with rows and columns.  Begin with an input array of points, defining a 1D path curving through 3D space -- 
+// now let each point be a row.  Sweep that whole curve around the Z axis in equal steps, stopping and storing new points along the way; let each step be a column.  Now we
+// have a flexible "generalized cylinder" spanning an area until total_curvature_angle.  
+{ constructor( rows, columns, points, texture_coord_range, total_curvature_angle = 2*Math.PI )
+  { super( rows, columns, i => Grid_Patch.sample_array( points, i ), (j,p) => Mat4.rotation( total_curvature_angle/columns, Vec.of( 0,0,1 ) ).times(p.to4(1)).to3(), texture_coord_range );
+  }
+}
+
+class Cylindrical_Tube extends Surface_Of_Revolution    // An open tube shape with equally sized sections, pointing down Z locally.    
+{ constructor( rows, columns, texture_range ) { super( rows, columns, [ ...Vec.cast( [1, 0, .5], [1, 0, -.5] ) ], texture_range ); } }
+
+class LightBox extends Shape    // A cube inserts six square strips into its arrays.
+{ constructor()  
+    { super();
+      for( var i = 0; i < 2; i++ )                    
+        for( var j = 0; j < 2; j++ )
+        { var square_transform = Mat4.rotation( i == 0 ? Math.PI/2 : 0, Vec.of(1, 0, 0) ).times( Mat4.rotation( Math.PI * j - ( i == 1 ? Math.PI/2 : 0 ), Vec.of( 0, 1, 0 ) ) )
+                                                                                         .times( Mat4.translation([ 0, 0, 1 ]) );
+          Square.prototype.insert_transformed_copy_into( this, [], square_transform );             
+        } 
+    } 
 }
 
 class Cube extends Shape    // A cube inserts six square strips into its arrays.
